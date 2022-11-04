@@ -1,0 +1,77 @@
+from spike import PrimeHub, LightMatrix, Button, StatusLight, ForceSensor, MotionSensor, Speaker, ColorSensor, App, DistanceSensor, Motor, MotorPair
+from spike.control import wait_for_seconds, wait_until, Timer
+from math import *
+from spike import MotorPair
+
+hub = PrimeHub()
+
+hub.light_matrix.show_image('HAPPY')
+
+motor = Motor('D')
+motor.run_to_position(0)
+
+motor_pair = MotorPair('A', 'E')
+
+power = 30
+kp = 0.5
+total_t = 0
+target = 43
+last_error = 0
+
+cs = ColorSensor("B")
+csf = ColorSensor("F")
+
+light_f = csf.get_reflected_light()
+# step 1: 
+while True:
+    light = cs.get_reflected_light()
+    # wait_for_seconds(0.1)
+    error = (light - target)
+
+    if error > 15:
+        error = 15
+        
+    control = int(kp * error  + 0.8 * (last_error - error))
+    last_error = error
+
+    lpower = max(3, power - int(control))
+    rpower = max(3, power + int(control))
+    rpower = min(50, rpower)
+    # print("light:", light, " err:", error, " lpower: ", lpower, " rpower: ", rpower)
+    motor_pair.start_tank_at_power(lpower, rpower)
+
+    light_f = csf.get_reflected_light() 
+    if light_f < 40:
+        break
+
+motor_pair.stop()
+wait_for_seconds(2)
+print("light_f = ", light_f)
+
+
+motor_pair.set_default_speed(30)
+
+steering = 0
+power = 30
+
+motor_pair.start_at_power(power, steering)
+
+hub.motion_sensor.reset_yaw_angle()
+
+angle = hub.motion_sensor.get_yaw_angle()
+
+motor_pair.start_tank(20, 0)
+
+while angle < 87:
+   angle = hub.motion_sensor.get_yaw_angle()
+
+motor_pair.stop()
+
+# lift_angle = 130
+motor_pair.move(-8, 'cm', 0)
+for i in range(3):
+    motor_pair.move(5, 'cm', 0)
+    motor_pair.move(-5, 'cm', 0)
+
+motor_pair.move(5, 'cm', 0)    
+    
