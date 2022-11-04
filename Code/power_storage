@@ -1,0 +1,95 @@
+from spike import PrimeHub, LightMatrix, Button, StatusLight, ForceSensor, MotionSensor, Speaker, ColorSensor, App, DistanceSensor, Motor, MotorPair
+from spike.control import wait_for_seconds, wait_until, Timer
+from math import *
+from spike import MotorPair
+
+hub = PrimeHub()
+
+hub.light_matrix.show_image('HAPPY')
+
+motor = Motor('D')
+motor.run_to_position(120)
+motor_pair = MotorPair('A', 'E')
+# hub.motion_sensor.reset_yaw_angle()
+
+# if hub.motion_sensor.get_yaw_angle() > 90:
+
+# motor_pair.start_tank_at_power(50, -50)
+power = 30
+kp = 0.5
+total_t = 0
+cs = ColorSensor("B")
+
+csf = ColorSensor("F")
+target = 43
+last_error = 0
+
+
+light_f = csf.get_reflected_light()
+# step 1: 
+while True:
+    light = cs.get_reflected_light()
+    # wait_for_seconds(0.1)
+    error = (light - target)
+    if error > 15:
+        error = 15
+    control = int(kp * error  + 0.8 * (last_error - error))
+    last_error = error
+
+    lpower = max(3, power - int(control))
+    rpower = max(3, power + int(control))
+    lpower = min(40, lpower)
+    # print("light:", light, " err:", error, " lpower: ", lpower, " rpower: ", rpower)
+    motor_pair.start_tank_at_power(lpower, rpower)
+
+    light_f = csf.get_reflected_light() 
+    if light_f < 33:
+        break
+
+
+motor_pair.stop()
+wait_for_seconds(0.4)
+print("light_f = ", light_f)
+
+
+
+# motor_pair.set_motor_rotation(27.63, 'cm')
+motor_pair.set_default_speed(30)
+
+steering = 0
+power = 30
+# distance = 8
+# motor_pair.start_at_power(power, steering)
+# # while True:
+
+# distance = 0
+# motor_pair.move(distance, 'cm', steering=0)
+
+
+# power = 30
+
+hub.motion_sensor.reset_yaw_angle()
+
+angle = hub.motion_sensor.get_yaw_angle()
+
+motor_pair.move(4, 'cm', steering = -30)
+# motor_pair.start_tank(10, 20)
+# while angle > -10:
+#    angle = hub.motion_sensor.get_yaw_angle()
+# motor_pair.stop()
+# motor_pair.move(3, 'cm', 0)
+# Initialize the motor
+
+motor.run_for_degrees(-50)
+wait_for_seconds(0.5)
+# motor.run_for_degrees(50)
+
+motor_pair.move(3, 'cm', steering = 20)
+
+motor.run_for_degrees(-70)
+
+motor_pair.move(-40, 'cm', steering = -15)
+# lift_angle = 130
+# for i in range(3):
+#     motor.run_for_degrees(lift_angle)
+#     motor.run_for_degrees(-lift_angle)
